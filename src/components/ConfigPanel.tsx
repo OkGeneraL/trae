@@ -48,7 +48,7 @@ const PROVIDERS = {
       'google/gemini-pro'
     ]
   }
-}
+} as const
 
 export function ConfigPanel({ config, setConfig, setIsConfigValid }: ConfigPanelProps) {
   const [isValidating, setIsValidating] = useState(false)
@@ -66,6 +66,17 @@ export function ConfigPanel({ config, setConfig, setIsConfigValid }: ConfigPanel
     setIsConfigValid(false)
   }
 
+  const handleProviderChange = (newProvider: string) => {
+    const firstModel = PROVIDERS[newProvider as keyof typeof PROVIDERS].models[0]
+    const newConfig = {
+      ...config,
+      provider: newProvider,
+      model: firstModel
+    }
+    setConfig(newConfig)
+    setValidationResult(null)
+    setIsConfigValid(false)
+  }
   const handleValidateConfig = async () => {
     if (!config.apiKey.trim()) {
       setValidationResult({
@@ -106,12 +117,7 @@ export function ConfigPanel({ config, setConfig, setIsConfigValid }: ConfigPanel
           </label>
           <select
             value={config.provider}
-            onChange={(e) => {
-              handleConfigChange('provider', e.target.value)
-              // Reset model when provider changes
-              const firstModel = PROVIDERS[e.target.value as keyof typeof PROVIDERS].models[0]
-              handleConfigChange('model', firstModel)
-            }}
+            onChange={(e) => handleProviderChange(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           >
             {Object.entries(PROVIDERS).map(([key, provider]) => (
