@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 import asyncio
 import json
 import uuid
@@ -12,8 +13,21 @@ import tempfile
 import shutil
 
 # Import trae-agent components
-from sdk.python import TraeAgentSDK
-from trae_agent.utils.config import Config
+import sys
+from pathlib import Path
+
+# Add the parent directory to Python path to import trae_agent
+parent_dir = Path(__file__).parent.parent
+sys.path.insert(0, str(parent_dir))
+
+try:
+    from sdk.python import TraeAgentSDK
+    from trae_agent.utils.config import Config
+    TRAE_AGENT_AVAILABLE = True
+    print("✅ Trae Agent SDK imported successfully")
+except ImportError as e:
+    print(f"❌ Failed to import Trae Agent SDK: {e}")
+    TRAE_AGENT_AVAILABLE = False
 
 app = FastAPI(title="Trae Agent Web API", version="1.0.0")
 
@@ -55,6 +69,9 @@ async def health_check():
 @app.post("/api/validate-config")
 async def validate_config(config: ConfigRequest):
     """Validate LLM configuration by creating a test config"""
+    if not TRAE_AGENT_AVAILABLE:
+        return {"valid": False, "message": "Trae Agent SDK not available"}
+        
     try:
         # Create a test config
         test_config = {
@@ -75,19 +92,29 @@ async def validate_config(config: ConfigRequest):
         }
         
         # Test the configuration by creating a Config object
-        trae_config = Config(test_config)
+        try:
+            trae_config = Config(test_config)
+            print(f"✅ Config created successfully for {config.provider}")
+        except Exception as config_error:
+            print(f"❌ Config creation failed: {config_error}")
+            return {"valid": False, "message": f"Config creation failed: {str(config_error)}"}
         
         # Basic validation - check if API key is provided
         if not config.api_key or len(config.api_key.strip()) < 10:
             return {"valid": False, "message": "API key appears to be invalid or too short"}
             
+        print(f"✅ Configuration validated for {config.provider} with model {config.model}")
         return {"valid": True, "message": "Configuration is valid"}
     except Exception as e:
+        print(f"❌ Validation error: {e}")
         return {"valid": False, "message": f"Configuration error: {str(e)}"}
 
 @app.post("/api/execute-task")
 async def execute_task(task_request: TaskRequest, background_tasks: BackgroundTasks):
     """Execute a task using Trae Agent and return session ID for streaming"""
+    if not TRAE_AGENT_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Trae Agent SDK not available")
+        
     try:
         # Create session
         session_id = str(uuid.uuid4())
@@ -123,6 +150,9 @@ async def execute_task(task_request: TaskRequest, background_tasks: BackgroundTa
 async def execute_task_background(session_id: str, task_request: TaskRequest, workspace_path: str):
     """Execute task in background and update session status"""
     try:
+        if not TRAE_AGENT_AVAILABLE:
+            raise Exception("Trae Agent SDK not available")
+            
         # Update session status
         active_sessions[session_id]["status"] = "running"
         active_sessions[session_id]["messages"].append({

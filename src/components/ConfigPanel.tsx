@@ -88,13 +88,23 @@ export function ConfigPanel({ config, setConfig, setIsConfigValid }: ConfigPanel
 
     setIsValidating(true)
     try {
+      console.log('Validating config:', { ...config, apiKey: '***' })
+      
+      // Try to reach the backend first
+      const healthResponse = await fetch('http://localhost:8000/health')
+      if (!healthResponse.ok) {
+        throw new Error('Backend server not responding')
+      }
+      
       const result = await validateConfig(config)
+      console.log('Validation result:', result)
       setValidationResult(result)
       setIsConfigValid(result.valid)
     } catch (error) {
+      console.error('Validation error:', error)
       setValidationResult({
         valid: false,
-        message: 'Failed to validate configuration'
+        message: `Failed to validate configuration: ${error instanceof Error ? error.message : 'Unknown error'}`
       })
       setIsConfigValid(false)
     } finally {

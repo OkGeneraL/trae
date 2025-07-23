@@ -100,6 +100,7 @@ export function useAgent() {
 
   const validateConfig = useCallback(async (config: AgentConfig) => {
     try {
+      console.log('Sending validation request to backend...')
       const response = await fetch('http://localhost:8000/api/validate-config', {
         method: 'POST',
         headers: {
@@ -108,9 +109,17 @@ export function useAgent() {
         body: JSON.stringify(config),
       })
 
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
       return await response.json()
     } catch (error) {
-      return { valid: false, message: 'Failed to validate configuration' }
+      console.error('Validation request failed:', error)
+      return { 
+        valid: false, 
+        message: `Failed to validate configuration: ${error instanceof Error ? error.message : 'Unknown error'}` 
+      }
     }
   }, [])
 
