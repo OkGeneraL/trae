@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import { CheckCircle, XCircle } from 'lucide-react'
 import { useAgent } from '../hooks/useAgent'
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'
+
 interface ConfigPanelProps {
   config: {
     provider: string
@@ -91,7 +93,7 @@ export function ConfigPanel({ config, setConfig, setIsConfigValid }: ConfigPanel
       console.log('Validating config:', { ...config, apiKey: '***' })
       
       // Try to reach the backend first
-      const healthResponse = await fetch('http://localhost:8000/health')
+      const healthResponse = await fetch(`${BACKEND_URL}/health`)
       if (!healthResponse.ok) {
         throw new Error('Backend server not responding')
       }

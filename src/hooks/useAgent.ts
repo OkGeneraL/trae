@@ -1,5 +1,7 @@
 import { useState, useCallback } from 'react'
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'
+
 interface AgentConfig {
   provider: string
   model: string
@@ -23,7 +25,7 @@ export function useAgent() {
       setIsExecuting(true)
       
       // Start task execution
-      const response = await fetch('http://localhost:8000/api/execute-task', {
+      const response = await fetch(`${BACKEND_URL}/api/execute-task`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -60,7 +62,7 @@ export function useAgent() {
   }, [])
 
   const streamSessionUpdates = useCallback((sessionId: string) => {
-    const eventSource = new EventSource(`http://localhost:8000/api/session/${sessionId}/stream`)
+    const eventSource = new EventSource(`${BACKEND_URL}/api/session/${sessionId}/stream`)
     
     eventSource.onmessage = (event) => {
       try {
@@ -101,7 +103,7 @@ export function useAgent() {
   const validateConfig = useCallback(async (config: AgentConfig) => {
     try {
       console.log('Sending validation request to backend...')
-      const response = await fetch('http://localhost:8000/api/validate-config', {
+      const response = await fetch(`${BACKEND_URL}/api/validate-config`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -125,7 +127,7 @@ export function useAgent() {
 
   const getWorkspaceFiles = useCallback(async (sessionId: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/workspace/${sessionId}/files`)
+      const response = await fetch(`${BACKEND_URL}/api/workspace/${sessionId}/files`)
       if (!response.ok) return { files: [] }
       return await response.json()
     } catch (error) {
@@ -136,7 +138,7 @@ export function useAgent() {
 
   const getFileContent = useCallback(async (sessionId: string, filePath: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/workspace/${sessionId}/file/${encodeURIComponent(filePath)}`)
+      const response = await fetch(`${BACKEND_URL}/api/workspace/${sessionId}/file/${encodeURIComponent(filePath)}`)
       if (!response.ok) return { content: 'File not found', type: 'error' }
       return await response.json()
     } catch (error) {
