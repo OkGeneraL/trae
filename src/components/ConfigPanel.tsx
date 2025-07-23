@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { CheckCircle, XCircle } from 'lucide-react'
+import { useAgent } from '../hooks/useAgent'
 
 interface ConfigPanelProps {
   config: {
@@ -55,6 +56,8 @@ export function ConfigPanel({ config, setConfig, setIsConfigValid }: ConfigPanel
     valid: boolean
     message: string
   } | null>(null)
+  
+  const { validateConfig } = useAgent()
 
   const handleConfigChange = (field: string, value: any) => {
     const newConfig = { ...config, [field]: value }
@@ -63,7 +66,7 @@ export function ConfigPanel({ config, setConfig, setIsConfigValid }: ConfigPanel
     setIsConfigValid(false)
   }
 
-  const validateConfig = async () => {
+  const handleValidateConfig = async () => {
     if (!config.apiKey.trim()) {
       setValidationResult({
         valid: false,
@@ -73,17 +76,19 @@ export function ConfigPanel({ config, setConfig, setIsConfigValid }: ConfigPanel
     }
 
     setIsValidating(true)
-    
-    // Simulate validation (in real implementation, this would call the backend)
-    setTimeout(() => {
-      const isValid = config.apiKey.length > 10 // Simple validation
+    try {
+      const result = await validateConfig(config)
+      setValidationResult(result)
+      setIsConfigValid(result.valid)
+    } catch (error) {
       setValidationResult({
-        valid: isValid,
-        message: isValid ? 'Configuration is valid' : 'Invalid API key format'
+        valid: false,
+        message: 'Failed to validate configuration'
       })
-      setIsConfigValid(isValid)
+      setIsConfigValid(false)
+    } finally {
       setIsValidating(false)
-    }, 1500)
+    }
   }
 
   return (
@@ -173,7 +178,7 @@ export function ConfigPanel({ config, setConfig, setIsConfigValid }: ConfigPanel
         {/* Validation */}
         <div className="flex items-center space-x-4">
           <button
-            onClick={validateConfig}
+            onClick={handleValidateConfig}
             disabled={isValidating || !config.apiKey.trim()}
             className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >

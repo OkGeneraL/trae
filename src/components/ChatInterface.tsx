@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react'
 import { Send, Square } from 'lucide-react'
 import { MessageList } from './MessageList'
+import { useAgent } from '../hooks/useAgent'
 
 interface ChatInterfaceProps {
   config: {
@@ -14,64 +15,16 @@ interface ChatInterfaceProps {
 
 export function ChatInterface({ config, isConfigValid }: ChatInterfaceProps) {
   const [input, setInput] = useState('')
-  const [messages, setMessages] = useState<any[]>([])
-  const [isExecuting, setIsExecuting] = useState(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  
+  const { currentSession, isExecuting, executeTask } = useAgent()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!input.trim() || !isConfigValid || isExecuting) return
 
-    const userMessage = {
-      id: Date.now(),
-      type: 'user',
-      content: input.trim(),
-      timestamp: new Date()
-    }
-
-    setMessages(prev => [...prev, userMessage])
-    setIsExecuting(true)
-
-    // Simulate agent execution (in real implementation, this would call the backend)
-    setTimeout(() => {
-      const systemMessage = {
-        id: Date.now() + 1,
-        type: 'system',
-        content: `Started executing: ${input.trim()}`,
-        timestamp: new Date()
-      }
-      setMessages(prev => [...prev, systemMessage])
-
-      // Simulate steps
-      setTimeout(() => {
-        const stepMessage = {
-          id: Date.now() + 2,
-          type: 'step',
-          content: {
-            step_number: 1,
-            state: 'thinking',
-            content: 'Analyzing the task and planning the implementation...',
-            tool_calls: []
-          },
-          timestamp: new Date()
-        }
-        setMessages(prev => [...prev, stepMessage])
-
-        // Simulate completion
-        setTimeout(() => {
-          const resultMessage = {
-            id: Date.now() + 3,
-            type: 'result',
-            content: 'Task completed successfully! The code has been generated and is ready for use.',
-            success: true,
-            executionTime: 15.5,
-            timestamp: new Date()
-          }
-          setMessages(prev => [...prev, resultMessage])
-          setIsExecuting(false)
-        }, 3000)
-      }, 2000)
-    }, 1000)
+    // Execute task using real Trae Agent
+    await executeTask(input.trim(), config)
 
     setInput('')
   }
@@ -88,8 +41,17 @@ export function ChatInterface({ config, isConfigValid }: ChatInterfaceProps) {
       {/* Status */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <div className="w-2 h-2 rounded-full bg-green-500" />
-          <span className="text-sm text-gray-600">Ready</span>
+          <div className={`w-2 h-2 rounded-full ${
+            isExecuting ? 'bg-yellow-500' : 'bg-green-500'
+          }`} />
+          <span className="text-sm text-gray-600">
+            {isExecuting ? 'Executing...' : 'Ready'}
+          </span>
+          {currentSession && (
+            <span className="text-xs text-gray-500">
+              Session: {currentSession.sessionId.slice(0, 8)}
+            </span>
+          )}
         </div>
         {!isConfigValid && (
           <div className="text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded-md">
@@ -100,7 +62,7 @@ export function ChatInterface({ config, isConfigValid }: ChatInterfaceProps) {
 
       {/* Messages */}
       <div className="flex-1 overflow-hidden">
-        <MessageList messages={messages} />
+        <MessageList messages={currentSession?.messages || []} />
       </div>
 
       {/* Input Form */}
