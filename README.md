@@ -162,6 +162,66 @@ trae-cli run "Refactor the database module" --trajectory-file debug_session.json
 
 # Force to generate patches
 trae-cli run "Update the API endpoints" --must-patch
+
+## 🌐 Web UI (Beta)
+
+Trae Agent now includes a web-based user interface for a more interactive experience.
+
+### Running with Docker (Recommended)
+
+This is the easiest way to get the web UI up and running.
+
+1.  **Build the Docker image:**
+    ```bash
+    docker build -t trae-agent-web .
+    ```
+
+2.  **Run the Docker container:**
+    ```bash
+    docker run -p 8000:8000 -e ANTHROPIC_API_KEY="your-anthropic-api-key" -e OPENAI_API_KEY="your-openai-api-key" trae-agent-web
+    ```
+    *Note: You must provide at least one API key via environment variables (`-e`) for the agent to function.*
+
+3.  **Access the application:**
+    Open your browser and navigate to [http://localhost:8000](http://localhost:8000).
+
+### Local Development
+
+If you want to run the frontend and backend separately for development.
+
+**1. Backend Setup:**
+
+The backend is a FastAPI server.
+
+```bash
+# Make sure you have activated your virtual environment
+# from the quick start section
+source .venv/bin/activate
+
+# Set your API keys
+export ANTHROPIC_API_KEY="your-anthropic-api-key"
+export OPENAI_API_KEY="your-openai-api-key"
+
+# Run the backend server
+uvicorn webapp.backend.main:app --reload --host 0.0.0.0 --port 8000
+```
+The backend will be running on `http://localhost:8000`.
+
+**2. Frontend Setup:**
+
+The frontend is a Next.js application.
+
+```bash
+# Navigate to the frontend directory
+cd webapp/frontend
+
+# Install dependencies
+npm install
+
+# Run the development server
+npm run dev
+```
+The frontend will be running on `http://localhost:3000`. It is pre-configured to connect to the backend at `http://localhost:8000`.
 ```
 
 #### `trae interactive` - Interactive Mode
