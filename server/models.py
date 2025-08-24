@@ -35,6 +35,12 @@ class TaskStatus(StrEnum):
     cancelled = "cancelled"
 
 
+class ExecutionMode(StrEnum):
+    local = "local"
+    docker = "docker"
+    e2b = "e2b"
+
+
 class Task(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     issue: str
@@ -42,6 +48,7 @@ class Task(SQLModel, table=True):
     provider_id: int = Field(foreign_key="provider.id")
     model: str
     must_patch: bool = False
+    execution_mode: ExecutionMode = Field(default=ExecutionMode.local)
     status: TaskStatus = Field(default=TaskStatus.pending)
     trajectory_file: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -54,5 +61,12 @@ class TaskEvent(SQLModel, table=True):
     step_number: Optional[int] = None
     kind: str
     payload: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class Setting(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    key: str
+    value: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
