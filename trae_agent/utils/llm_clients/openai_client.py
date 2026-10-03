@@ -50,7 +50,9 @@ class OpenAIClient(BaseLLMClient):
             model=model_config.model,
             tools=tool_schemas if tool_schemas else openai.NOT_GIVEN,
             temperature=model_config.temperature
-            if "o3" not in model_config.model and "o4-mini" not in model_config.model
+            if "o3" not in model_config.model
+            and "o4-mini" not in model_config.model
+            and "gpt-5" not in model_config.model
             else openai.NOT_GIVEN,
             top_p=model_config.top_p,
             max_output_tokens=model_config.max_tokens,
@@ -67,6 +69,11 @@ class OpenAIClient(BaseLLMClient):
         """Send chat messages to OpenAI with optional tool support."""
         openai_messages: ResponseInputParam = self.parse_messages(messages)
 
+        if reuse_history:
+            self.message_history = self.message_history + openai_messages
+        else:
+            self.message_history = openai_messages
+
         tool_schemas = None
         if tools:
             tool_schemas = [
@@ -80,10 +87,7 @@ class OpenAIClient(BaseLLMClient):
                 for tool in tools
             ]
 
-        api_call_input: ResponseInputParam = []
-        if reuse_history:
-            api_call_input.extend(self.message_history)
-        api_call_input.extend(openai_messages)
+        api_call_input: ResponseInputParam = self.message_history
 
         # Apply retry decorator to the API call
         retry_decorator = retry_with(
